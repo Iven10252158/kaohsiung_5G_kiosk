@@ -41,21 +41,21 @@
       @click="clickEvent"
       :class="{ afterEventBtn: showEventsList}">活動</button>
     </div>
-    <!-- <TimeTable v-if="showEventBtn"></TimeTable> -->
+    <TimeTable v-if="showTimeTable"></TimeTable>
   <router-view></router-view>
   </div>
 </template>
 
 <script>
 import Marquee from '@/components/Marquee.vue'
-// import TimeTable from '@/components/TimeTable.vue'
+import TimeTable from '@/components/TimeTable.vue'
 // import MerchantList from '@/components/Merchants.vue'
 // import EventsList from '@/components/Events.vue'
 export default {
   inject: ['useWebsocket'],
   components: {
-    Marquee
-    // TimeTable
+    Marquee,
+    TimeTable
     // MerchantList,
     // EventsList
   },
@@ -109,7 +109,8 @@ export default {
           source: '商家區分B',
           type: '購物'
         }
-      ]
+      ],
+      pageUUID: ''
 
     }
   },
@@ -121,6 +122,7 @@ export default {
       this.showBackArrow = true
       this.showEventBtn = false
       this.showMerchantList = true
+      this.showTimeTable = false
     },
     clickEvent () {
       this.showBackArrow = true
@@ -130,13 +132,15 @@ export default {
     arrowBtn () {
       console.log(this.$route.query)
       if (this.$route.query.merchants !== 'total') {
-        this.$router.go(-1)
-        console.log('yes')
+        // this.$router.go(-1)
+        this.$router.push({ path: '/contentA/merchants', query: { uuid: this.pageUUID, merchants: 'total' } })
         this.showBackArrow = true
+        this.showTimeTable = false
       } else {
-        this.$router.go(-1)
-        console.log('no')
+        this.$router.push({ path: '/contentA', query: { uuid: this.pageUUID } })
+        console.log(this.$route)
         this.showBackArrow = false
+        this.showTimeTable = true
       }
       this.showEventBtn = true
       this.showMerchantBtn = true

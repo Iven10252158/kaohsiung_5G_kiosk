@@ -5,35 +5,52 @@
             <button
               type="button"
               class="text-center py-2 rounded-0 border-0 w-100 text-dark"
+              @click="totalMerchants(store)"
+              :class="{'bg-success':merchantsValue === ''}"
+            >全部商家</button>
+            <button
+              type="button"
+              class="text-center py-2 rounded-0 border-0 w-100 text-dark"
               v-for="(store) in categories" :key="store"
               @click="chooseStore(store)"
-              :class="{'bg-success': store === storeBtnSource}">
+              :class="{'bg-success': store === merchantsValue}">
               {{ store }}</button>
-            <router-view/>
         </div>
         <div class="merchant-right bg-dark">
-          <div class="container">
-            <!-- <MerchantsInfo v-if="showComponent">
-              <ul class="list-unstyled">
-                <li class="d-flex mt-3">
-                  <h5>電話 :</h5>
-                  <p>{{ store.telephone }}</p>
-                </li>
-                <li class="d-flex">
-                  <h5>地址 :</h5>
-                  <p>{{ store.address }}</p>
-                </li>
-              </ul>
-            </MerchantsInfo>
-              <vue-qr :text="store.url" :margin="0"
-                lorDark="#f67b29" colorLight="#fff"
-                :logoSrc="store.icon" :logoScale="0.2"
-                :size="150">
-              </vue-qr> -->
-          </div>
           <div v-if="showMerchants">
             <div class="merchan-top container">
               <div class="d-flex justify-content-around">
+                <p
+                    class="badge pointer rounded-pill bg-secondary d-flex align-items-center mt-2 mb-0"
+                    @click="totalTypes(type)"
+                    :class="{'bg-success': typeBtn === ''}"
+                >
+                <span
+                    class="badge-circle pe-1 text-light"
+                    :class="{'text-dark': typeBtn === ''}"
+                >
+                    <i class="fas fa-circle"></i>
+                </span>
+                <span class="text-dark">全部</span>
+                </p>
+                <template v-if="merchantsValue === ''">
+                <p
+                  class="badge pointer rounded-pill bg-secondary d-flex align-items-center mt-2 mb-0"
+                  v-for="(type) in allTypes" :key="type"
+                  @click="chooseType(type)"
+                  :class="{'bg-success': type === typeBtn}"
+                >
+                  <span
+                    class="badge-circle pe-1 text-light"
+                    :class="{'text-dark': type === typeBtn}"
+                  >
+                    <i class="fas fa-circle"></i>
+                  </span>
+                  <span class="text-dark">{{ type }}</span>
+                </p>
+                </template>
+
+                <template v-if="merchantsValue !== ''">
                 <p
                   class="badge pointer rounded-pill bg-secondary d-flex align-items-center mt-2 mb-0"
                   v-for="(type) in types" :key="type"
@@ -48,21 +65,24 @@
                   </span>
                   <span class="text-dark">{{ type }}</span>
                 </p>
+                </template>
               </div>
             </div>
             <div class="merchant-bottom container">
               <div class="row g-0">
-                <div class="col-sm-4 d-flex justify-content-center" v-for="(store) in filterMerchant" :key="store.name">
-                    <router-link :to="
+                    <div class="col-sm-4 d-flex justify-content-center" v-for="(store) in filterMerchants" :key="store.name"
+                    @click="openInformation(store)">
+                        <button class= "text-center my-2 py-2 px-4 rounded-0 border-0 text-white bg-secondary text-white text-decoration-none">{{ store.name }}</button>
+                    <MerchantInfo :merchants="merchantName" v-if="showComponent"></MerchantInfo>
+                    <!-- <router-link :to="
                         {path : '/contentA/merchantDetail' ,
                         query: {
                         uuid: `${$route.query.uuid}`,
                         merchantsName: `${store.name}`
                         }}"
                         class= "text-center my-2 py-2 px-4 rounded-0 border-0 text-white bg-secondary text-white text-decoration-none">
-                        link
                         {{ store.name }}
-                    </router-link>
+                    </router-link> -->
                 </div>
               </div>
             </div>
@@ -70,15 +90,16 @@
         </div>
     </div>
 </div>
+<router-view/>
 </template>
 
 <script>
-// import MerchantsInfo from '@/components/MerchantsInfo.vue'
+import MerchantInfo from '@/components/MerchantsInfo.vue'
 // import vueQr from 'vue-qr/src/packages/vue-qr.vue'
 export default {
   components: {
     // vueQr,
-    // MerchantsInfo
+    MerchantInfo
   },
   data () {
     return {
@@ -119,38 +140,61 @@ export default {
         }
       ],
       types: [],
-      storeBtnSource: '',
+      allTypes: [],
+      totalTypeValue: '',
       typeBtn: '',
       categories: [],
-      showComponent: false,
-      showMerchants: true,
-      merchantName: {}
+      showComponent: false, // 預設不顯示單一商家資訊
+      showMerchants: true, // 預設顯示 所有商家的資訊
+      merchantName: {},
+      merchantsValue: ''
     }
   },
   computed: {
-    filterMerchant () {
-      return this.stores.filter((item) => item.type.match(this.typeBtn))
-    }
-  },
-  methods: {
-    openInformation (merchantItem) {
-      console.log(merchantItem)
-      this.merchantName = this.stores.filter(item => {
-        if (merchantItem.source === item.source && merchantItem.name === item.name) {
+    filterMerchants () {
+      return this.stores.filter((item) => {
+        if (item.type.match(this.typeBtn) && item.source.match(this.merchantsValue)) {
           return item
         }
       })
+    }
+  },
+  methods: {
+    totalMerchants (item) {
+      this.stores.filter(element => {
+        this.merchantsValue = ''
+        if (item === undefined) {
+          return this.stores
+        }
+      })
+      this.allType()
+    },
+    totalTypes (type) {
+      this.stores.filter(element => {
+        this.typeBtn = ''
+        if (type === undefined) {
+          return this.stores
+        }
+      })
+    },
+    openInformation (merchantItem) {
+      this.stores.forEach(item => {
+        if (merchantItem.source === item.source && merchantItem.name === item.name) {
+          this.merchantName = item
+        }
+      })
+      //   console.log(this.merchantName)
       this.showComponent = true
-      this.showMerchants = false
+    //   this.showMerchants = false
     },
     chooseStore (item) {
       this.stores.filter(store => {
         if (store.source === item) {
-          this.storeBtnSource = item
+          this.merchantsValue = item
           return item
         }
       })
-      this.filterType()
+      this.filterTypes()
     },
     chooseType (item) {
       this.stores.filter(store => {
@@ -167,10 +211,17 @@ export default {
       })
       this.categories = [...categories]
     },
-    filterType () {
+    allType () {
+      const allType = new Set()
+      this.stores.filter(item => {
+        allType.add(item.type)
+        this.allTypes = [...allType]
+      })
+    },
+    filterTypes () {
       const types = new Set()
       this.stores.filter(item => {
-        if (item.source === this.storeBtnSource) {
+        if (item.source === this.merchantsValue) {
           types.add(item.type)
         }
         this.types = [...types]
@@ -178,8 +229,8 @@ export default {
     }
   },
   mounted () {
-    console.log(this.$route)
     this.filterCategories()
+    this.totalMerchants()
   }
 }
 </script>
